@@ -13,6 +13,13 @@ In this tutorial, we will focus on **Data Governance** and **Security** practice
 Data governance is crucial to ensure that data is accurate, accessible, and secure. In **Delta Live Tables (DLT)**, you can implement data governance in several ways, including by tagging sensitive data, maintaining data lineage, and ensuring schema consistency.
 
 ---
+Best Practices for Using Unity Catalog to Manage Metadata Across Multiple Workspaces
+Centralize Metadata: Use Unity Catalog as the central repository for all metadata, so all users and teams can access the same dataset details.
+
+Consistent Naming Conventions: Use clear and consistent naming conventions for your catalogs, schemas, and tables to make assets easier to manage.
+
+Tagging and Classification: Use tags to classify data assets, such as sensitive, PII, or compliance-required, to help manage access and compliance requirements.
+
 
 ##### **8.1.1 Setting Up Data Tags for Classification**
 
