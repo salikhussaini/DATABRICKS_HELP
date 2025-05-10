@@ -33,22 +33,98 @@ Module 2: Mastering PySpark in Databricks
 * Temporary views, managed vs external tables
 * Introduction to Delta constraints (PRIMARY KEY, GENERATED ALWAYS AS)
 
-Module 3: Building Modern DLT Pipelines
-3.1 DLT Pipeline Development
+Here’s an expanded version of **Module 3: Building Modern DLT Pipelines** tailored for a **Data Engineer developing in Databricks**, incorporating hands-on best practices and deeper coverage for each submodule:
 
-* dlt.read, dlt.read\_stream, and table declarations
-* SQL vs Python DLT syntax
-* Expectations: enforce(), expect(), expect\_or\_fail()
+---
 
-3.2 Parameterization and Workflow Configuration
+### **Module 3: Building Modern DLT Pipelines**
 
-* Using pipeline configuration parameters
-* Declarative orchestration using DLT flows and dependencies
+#### **3.1 DLT Pipeline Development**
 
-3.3 CI/CD & Workflow Automation
+**Objective:** Learn the foundational syntax and semantics of defining and managing Delta Live Tables (DLT) in Python and SQL.
 
-* Integrating DLT with Repos and Workflows
-* Testing pipelines and mocking inputs
+* **DLT Table Declarations**
+
+  * `@dlt.table` vs `@dlt.view`: when to use each
+  * Managing dependencies between tables (chaining DLT definitions)
+  * Materialized vs streaming views
+
+* **Data Ingestion with DLT**
+
+  * `dlt.read()` and `dlt.read_stream()` usage
+  * Sourcing from multiple formats: Delta, JSON, CSV, Parquet, AutoLoader
+
+* **Python vs SQL DLT Syntax**
+
+  * Best practices for readability and modularity
+  * When to use SQL for simplicity and Python for complex logic
+
+* **Data Quality with Expectations**
+
+  * `dlt.expect()`, `dlt.expect_or_fail()`, `dlt.enforce()`
+  * Writing reusable quality rules
+  * Logging failures and managing bad records
+  * Integration with data observability tools
+
+* **Hands-on Lab:**
+  Build a DLT pipeline that ingests streaming JSON data, transforms it with business rules, and enforces data quality constraints.
+
+---
+
+#### **3.2 Parameterization and Workflow Configuration**
+
+**Objective:** Enable dynamic, reusable, and well-orchestrated pipelines through configurations and dependencies.
+
+* **Pipeline Configuration Parameters**
+
+  * Creating and accessing parameters via `dlt.config.get()`
+  * Parameterizing source paths, table names, thresholds
+
+* **Workflow Orchestration in DLT**
+
+  * Declarative dependencies using `@dlt.table` and upstream chaining
+  * Controlling execution order without DAGs
+  * Managing joins between live and static datasets
+  * Handling late-arriving data or slowly changing dimensions (SCDs)
+
+* **Advanced Techniques**
+
+  * Multi-layer architecture: Bronze, Silver, Gold
+  * Dynamically toggling pipeline behaviors using flags
+
+* **Hands-on Lab:**
+  Build a parameterized multi-layer pipeline with quality checks and runtime toggles for streaming vs batch mode.
+
+---
+
+#### **3.3 CI/CD & Workflow Automation**
+
+**Objective:** Integrate DLT pipelines into version control and deployment workflows for production reliability.
+
+* **Source Control with Databricks Repos**
+
+  * Branching strategies and best practices
+  * Folder structure for DLT projects
+  * Managing notebooks vs `.py` files
+
+* **Workflow Automation**
+
+  * Creating and scheduling DLT pipelines via Databricks Workflows
+  * Triggering pipelines via REST APIs or job dependencies
+  * Using Databricks CLI and `databricks-cicd-tools`
+
+* **Testing & Mocking**
+
+  * Writing unit tests for DLT logic using `pytest`
+  * Mocking `dlt.read()` in test environments
+  * Validating expectations using test data
+
+* **Deployment Automation**
+
+  * Integrating with CI tools: GitHub Actions, Azure DevOps, GitLab CI/CD
+  * Promoting pipelines across dev, staging, prod
+
+
 
 Module 4: Data Quality & Observability
 4.1 Data Validation with Expectations
