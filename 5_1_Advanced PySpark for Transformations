@@ -1,0 +1,227 @@
+### **Module 5: Advanced PySpark for Transformations**
+
+In this module, we will explore advanced PySpark techniques, such as using **Window Functions** for complex aggregations, leveraging **User Defined Functions (UDFs)** and **Pandas UDFs** for custom logic, and working with **nested and semi-structured data** formats (like JSON and arrays).
+
+---
+
+### **5.1 Using Window Functions and Advanced Aggregations**
+
+#### **Window Functions**
+
+Window functions allow you to perform calculations across a specified range of rows related to the current row. These functions are essential when you need to compute running totals, ranks, or windowed aggregates.
+
+##### **Example: rank(), row\_number()**
+
+Let’s start by demonstrating **rank()** and **row\_number()**, two commonly used window functions.
+
+```python
+from pyspark.sql import SparkSession
+from pyspark.sql import functions as F
+from pyspark.sql.window import Window
+
+# Initialize Spark session
+spark = SparkSession.builder.appName("Advanced PySpark").getOrCreate()
+
+# Sample Data
+data = [
+    ('Alice', '2025-01-01', 200),
+    ('Bob', '2025-01-02', 300),
+    ('Alice', '2025-01-02', 150),
+    ('Bob', '2025-01-03', 400),
+    ('Alice', '2025-01-03', 250)
+]
+
+columns = ['name', 'date', 'amount']
+
+df = spark.createDataFrame(data, columns)
+
+# Define window specification to partition by 'name' and order by 'date'
+window_spec = Window.partitionBy('name').orderBy('date')
+
+# Applying rank() and row_number()
+df = df.withColumn("rank", F.rank().over(window_spec)) \
+       .withColumn("row_number", F.row_number().over(window_spec))
+
+df.show()
+```
+
+**Explanation:**
+
+* `rank()` assigns a rank to each row within the window partition, with ties having the same rank.
+* `row_number()` assigns a unique row number to each row in the partition.
+
+##### **Example: Rolling Aggregations**
+
+Rolling or moving averages are useful for analyzing trends over time.
+
+```python
+# Calculate a rolling sum with a window size of 2
+rolling_window = Window.partitionBy('name').orderBy('date').rowsBetween(-1, 0)
+
+df = df.withColumn("rolling_sum", F.sum('amount').over(rolling_window))
+
+df.show()
+```
+
+**Explanation:**
+
+* This computes a moving sum where each row’s value is summed with the previous row’s value (based on the ordering by `date`).
+
+##### **Example: Multi-Level Aggregations**
+
+Grouping by multiple columns allows you to perform more complex aggregations.
+
+```python
+df_grouped = df.groupBy('name', 'rank').agg(
+    F.sum('amount').alias('total_amount'),
+    F.avg('amount').alias('average_amount')
+)
+
+df_grouped.show()
+```
+
+**Explanation:**
+
+* The data is grouped by both `name` and `rank` before performing aggregation operations like `sum()` and `avg()`.
+
+---
+
+### **5.2 PySpark UDFs and Pandas UDFs**
+
+#### **User Defined Functions (UDFs)**
+
+UDFs allow you to define custom transformations that can’t be achieved with built-in functions. However, UDFs in PySpark come with performance trade-offs because they serialize data to Python, which can be slow compared to native PySpark functions.
+
+##### **Example: Using a Simple UDF**
+
+```python
+from pyspark.sql.functions import udf
+from pyspark.sql.types import IntegerType
+
+# Define a simple UDF to double the amount
+def double_amount(amount):
+    return amount * 2
+
+# Register the UDF
+double_amount_udf = udf(double_amount, IntegerType())
+
+# Apply the UDF
+df_with_double = df.withColumn("doubled_amount", double_amount_udf('amount'))
+
+df_with_double.show()
+```
+
+**Explanation:**
+
+* The UDF `double_amount` is applied to the `amount` column, creating a new column `doubled_amount`.
+
+#### **Performance Trade-offs with UDFs**
+
+While UDFs provide flexibility, they are slower because they require data serialization and deserialization. Whenever possible, prefer using PySpark's built-in functions.
+
+---
+
+#### **Pandas UDFs (Vectorized UDFs)**
+
+Pandas UDFs, introduced in PySpark 2.3, provide better performance by using the **Pandas API** and running operations in a vectorized manner.
+
+##### **Example: Using Pandas UDF for Vectorized Transformation**
+
+```python
+from pyspark.sql.functions import pandas_udf
+from pyspark.sql.types import DoubleType
+import pandas as pd
+
+# Define a Pandas UDF for vectorized operation
+@pandas_udf(DoubleType())
+def double_amount_pandas_udf(series: pd.Series) -> pd.Series:
+    return series * 2
+
+# Apply the Pandas UDF
+df_with_double_pandas = df.withColumn("doubled_amount", double_amount_pandas_udf('amount'))
+
+df_with_double_pandas.show()
+```
+
+**Explanation:**
+
+* `pandas_udf` allows the operation to be applied to entire columns at once, improving performance compared to standard UDFs.
+
+##### **Performance Considerations:**
+
+* Pandas UDFs are generally faster than regular UDFs because they leverage vectorized operations in Pandas, reducing overhead.
+* However, they still involve serialization between Spark and Python, so avoid using them on very large datasets where native Spark functions can be applied.
+
+---
+
+### **5.3 Nested and Semi-Structured Data**
+
+#### **Working with Arrays, Structs, and JSON**
+
+Spark provides powerful tools to work with nested and semi-structured data, such as arrays, structs, and JSON objects. These data formats are commonly found in data lakes or data from APIs.
+
+##### **Example: Exploding Nested Fields (Arrays)**
+
+Suppose you have data where each row contains a list of transactions for a user, and you want to "explode" these into individual rows.
+
+```python
+# Sample data with nested array
+data = [
+    ('Alice', [100, 200, 300]),
+    ('Bob', [400, 500])
+]
+
+columns = ['name', 'transactions']
+
+df = spark.createDataFrame(data, columns)
+
+# Exploding the transactions array to create separate rows
+df_exploded = df.withColumn("transaction", F.explode('transactions'))
+
+df_exploded.show()
+```
+
+**Explanation:**
+
+* `F.explode()` creates a new row for each element in the array.
+
+##### **Example: Flattening Nested JSON Data (Structs)**
+
+If your data is in a nested JSON structure, you can flatten it into a more accessible format.
+
+```python
+# Sample nested data
+data = [
+    ('Alice', {'address': {'city': 'New York', 'zipcode': '10001'}, 'age': 30}),
+    ('Bob', {'address': {'city': 'Los Angeles', 'zipcode': '90001'}, 'age': 25})
+]
+
+columns = ['name', 'details']
+
+df = spark.createDataFrame(data, columns)
+
+# Flatten the struct into individual columns
+df_flattened = df.select(
+    'name',
+    F.col('details.address.city').alias('city'),
+    F.col('details.address.zipcode').alias('zipcode'),
+    F.col('details.age').alias('age')
+)
+
+df_flattened.show()
+```
+
+**Explanation:**
+
+* You can use `F.col()` to access nested fields inside structs and JSON-like columns.
+
+---
+
+### **Conclusion**
+
+In this module, we’ve explored advanced PySpark techniques for performing complex transformations on structured and semi-structured data:
+
+1. **Window functions** (like `rank()`, `row_number()`) for ordering and ranking.
+2. **Advanced aggregations**, including multi-level aggregations and rolling operations.
+3. **UDFs and Pandas UDFs** for custom transformations, with a focus on performance trade-offs and optimizations.
+4. Techniques for working with **nested and semi-structured data**, such as JSON, arrays, and structs, including **exploding** and **flattening** nested fields.
