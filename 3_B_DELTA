@@ -1,0 +1,264 @@
+### **Module 3: Managing Dependencies Between Tables**
+
+#### **Chaining DLT Definitions**
+
+**Example: Using `dlt.read()` to reference a table in another transformation.**
+
+```python
+import dlt
+import pyspark.sql.functions as F
+
+# Bronze layer: Raw data ingestion
+@dlt.table
+def bronze_table():
+    # Reading raw data from a Delta table
+    raw_data = dlt.read("raw_data")
+    return raw_data
+
+# Silver layer: Cleansed data with transformations
+@dlt.table
+def silver_table():
+    # Reading data from the bronze table and performing transformations
+    bronze_data = dlt.read("bronze_table")
+    
+    # Cleanse the data by removing invalid records
+    cleansed_data = bronze_data.filter(F.col("transaction_amount") > 0)
+    
+    return cleansed_data
+
+# Gold layer: Aggregated data for reporting
+@dlt.table
+def gold_table():
+    # Reading cleansed data from the silver table
+    silver_data = dlt.read("silver_table")
+    
+    # Aggregating data by user behavior
+    aggregated_data = silver_data.groupBy("user_id").agg(F.sum("transaction_amount").alias("total_spent"))
+    
+    return aggregated_data
+```
+
+**Optimizing Performance and Consistency:**
+
+```python
+# Example: Partitioning data by transaction date for faster reads
+@dlt.table
+def partitioned_gold_table():
+    silver_data = dlt.read("silver_table")
+    partitioned_data = silver_data.withColumn("transaction_date", F.to_date("timestamp"))
+    
+    # Writing partitioned data to a Delta table
+    partitioned_data.write.partitionBy("transaction_date").format("delta").saveAsTable("partitioned_gold_table")
+    
+    return partitioned_data
+```
+
+---
+
+### **Module 4: Materialized vs Streaming Views**
+
+#### **Materialized Views**
+
+**When to Materialize a View:**
+
+```python
+# Materialized View for improving query performance
+@dlt.view
+def materialized_view():
+    # Create a materialized view for frequent aggregations
+    return """
+        SELECT user_id, SUM(transaction_amount) AS total_spent
+        FROM silver_table
+        GROUP BY user_id
+    """
+```
+
+**Use Case:**
+A materialized view is perfect for summarizing daily sales data that is frequently queried, as it avoids repeated computation.
+
+#### **Streaming Views**
+
+**Real-Time Data with Streaming Views:**
+
+```python
+# Stream data from Kafka in real-time
+@dlt.table
+def streaming_table():
+    # Read data from a streaming source (e.g., Kafka)
+    streaming_data = dlt.read_stream("kafka_topic")
+    
+    return streaming_data
+```
+
+**Use Case:**
+Real-time monitoring, such as live tracking of inventory or web analytics, can be achieved with streaming views.
+
+---
+
+### **Module 5: Data Ingestion with DLT**
+
+#### **dlt.read() vs dlt.read\_stream() Usage**
+
+```python
+# Batch Ingestion
+@dlt.table
+def batch_ingestion():
+    batch_data = dlt.read("/mnt/data/transactions.parquet")
+    return batch_data
+
+# Real-time Ingestion
+@dlt.table
+def real_time_ingestion():
+    stream_data = dlt.read_stream("streaming_source")
+    return stream_data
+```
+
+**Performance Optimization:**
+
+* For large-scale batch ingestion, partition the data by time (e.g., daily partitions) to improve performance.
+* Use `dlt.read_stream()` for continuous ingestion from Kafka, Delta tables, etc.
+
+---
+
+### **Module 6: Python vs SQL DLT Syntax**
+
+#### **Best Practices for Readability and Modularity**
+
+**Python Code Example:**
+
+```python
+# Define a function to clean data
+def clean_data(data):
+    return data.filter(F.col("amount") > 0)
+
+# Use this function in your DLT pipeline
+@dlt.table
+def silver_table():
+    raw_data = dlt.read("bronze_table")
+    cleaned_data = clean_data(raw_data)
+    
+    return cleaned_data
+```
+
+#### **When to Use SQL vs Python**
+
+**SQL Example for Simple Aggregations:**
+
+```sql
+-- SQL for a simple aggregation in the Gold layer
+CREATE OR REPLACE VIEW gold_table AS
+SELECT user_id, SUM(transaction_amount) AS total_spent
+FROM silver_table
+GROUP BY user_id
+```
+
+**Python Example for Complex Logic:**
+
+```python
+@dlt.table
+def complex_transformation():
+    data = dlt.read("raw_data")
+    
+    # Complex logic: Apply a custom transformation that can't be done in SQL
+    transformed_data = data.withColumn("custom_column", F.lit(1))
+    
+    return transformed_data
+```
+
+---
+
+### **Module 7: Data Quality with DLT Expectations**
+
+#### **dlt.expect(), dlt.expect\_or\_fail(), dlt.enforce()**
+
+```python
+# Enforcing data quality: Expect positive values for transaction amounts
+@dlt.table
+def quality_check_table():
+    raw_data = dlt.read("raw_data")
+    
+    # Define data expectations
+    dlt.expect(raw_data, "transaction_amount > 0")
+    
+    return raw_data
+```
+
+#### **Writing Reusable Quality Rules**
+
+```python
+# Reusable function to enforce expectations
+def enforce_positive_amounts(data):
+    dlt.expect(data, "transaction_amount > 0")
+    return data
+
+# Use the function in multiple tables
+@dlt.table
+def table_with_quality_check():
+    raw_data = dlt.read("raw_data")
+    return enforce_positive_amounts(raw_data)
+```
+
+#### **Logging Failures and Managing Bad Records**
+
+```python
+# Handling failed records
+@dlt.table
+def handle_bad_records():
+    raw_data = dlt.read("raw_data")
+    
+    # Log failed records to a separate table
+    bad_records = raw_data.filter(F.col("transaction_amount") <= 0)
+    bad_records.write.format("delta").saveAsTable("bad_records")
+    
+    return raw_data
+```
+
+---
+
+### **Module 8: Advanced DLT Concepts**
+
+#### **Incremental ETL in DLT**
+
+**Optimizing for Incremental Processing:**
+
+```python
+@dlt.table
+def incremental_processing():
+    # Load only new records since the last pipeline run
+    new_data = dlt.read("source_table").filter(F.col("timestamp") > F.lit("2025-01-01"))
+    return new_data
+```
+
+#### **DLT Performance Tuning**
+
+```python
+# Optimizing reads with partitioning
+@dlt.table
+def optimized_table():
+    data = dlt.read("source_table")
+    partitioned_data = data.write.partitionBy("transaction_date").format("delta").saveAsTable("optimized_table")
+    
+    return partitioned_data
+```
+
+**Monitoring and Debugging:**
+
+* Use Databricks monitoring tools to track the performance of your DLT pipelines.
+* Analyze the execution time and query performance to identify bottlenecks.
+
+---
+
+### **Final Project: Building a Scalable ETL Pipeline**
+
+For the final project, implement a fully functional DLT pipeline that involves raw data ingestion (Bronze), cleansing (Silver), and aggregation (Gold). Focus on ensuring the pipeline handles performance at scale, enforces data quality expectations, and monitors the pipeline using observability tools.
+
+**Steps:**
+
+1. Ingest raw data from a cloud storage (e.g., S3 or Azure Blob) into the Bronze layer.
+2. Cleanse the data in the Silver layer by filtering out invalid records.
+3. Aggregate the data in the Gold layer to prepare for reporting.
+4. Implement data quality rules across all layers.
+5. Optimize performance using partitioning and materialized views.
+6. Monitor and log data quality and pipeline performance.
+
+---
