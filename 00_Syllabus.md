@@ -39,35 +39,229 @@ Here’s an expanded version of **Module 3: Building Modern DLT Pipelines** tail
 
 ### **Module 3: Building Modern DLT Pipelines**
 
-#### **3.1 DLT Pipeline Development**
+Here’s an expanded syllabus for learning Delta Live Tables (DLT) in Databricks:
 
-**Objective:** Learn the foundational syntax and semantics of defining and managing Delta Live Tables (DLT) in Python and SQL.
+### **Course Overview**
 
-* **DLT Table Declarations**
+This course will help learners develop a solid understanding of defining, managing, and optimizing Delta Live Tables (DLT) using Python and SQL in Databricks. We will explore pipeline design, data ingestion, quality management, and best practices for scalability.
 
-  * `@dlt.table` vs `@dlt.view`: when to use each
-  * Managing dependencies between tables (chaining DLT definitions)
-  * Materialized vs streaming views
+### **Module 1: Introduction to Delta Live Tables (DLT)**
 
-* **Data Ingestion with DLT**
+* **What is DLT?**
 
-  * `dlt.read()` and `dlt.read_stream()` usage
-  * Sourcing from multiple formats: Delta, JSON, CSV, Parquet, AutoLoader
+  * Overview of Delta Live Tables in Databricks.
+  * Advantages of DLT for ETL pipeline management.
+  * Key features of DLT: Automation, Data Quality, Scalability.
 
-* **Python vs SQL DLT Syntax**
+* **Getting Started**
 
-  * Best practices for readability and modularity
-  * When to use SQL for simplicity and Python for complex logic
+  * Setting up a Databricks workspace for DLT development.
+  * Creating a basic pipeline with DLT.
 
-* **Data Quality with Expectations**
+---
 
-  * `dlt.expect()`, `dlt.expect_or_fail()`, `dlt.enforce()`
-  * Writing reusable quality rules
-  * Logging failures and managing bad records
-  * Integration with data observability tools
+### **Module 2: DLT Table Declarations**
 
-* **Hands-on Lab:**
-  Build a DLT pipeline that ingests streaming JSON data, transforms it with business rules, and enforces data quality constraints.
+#### **@dlt.table vs @dlt.view**
+
+* **When to Use Each:**
+
+  * **@dlt.table:**
+
+    * Creating physical tables stored on disk for large datasets.
+    * Persistent storage, optimized for querying large amounts of data.
+  * **@dlt.view:**
+
+    * Creating virtual views with no data storage.
+    * Useful for dynamic calculations that don’t require physical storage.
+
+* **Real-World Use Cases:**
+
+  * **@dlt.table:**
+
+    * Raw data storage (e.g., raw event logs).
+    * Cleansed data storage for further transformations.
+  * **@dlt.view:**
+
+    * Aggregated reports.
+    * Data transformations that don’t need persistence.
+
+* **Performance Considerations:**
+
+  * Choosing between tables and views based on query performance.
+  * Cost and storage implications of physical tables vs. virtual views.
+
+---
+
+### **Module 3: Managing Dependencies Between Tables**
+
+#### **Chaining DLT Definitions**
+
+* **Reference One Table in Another’s Transformation Pipeline**
+
+  * Using `dlt.read()` to reference a table in a new transformation.
+  * Example: Using a cleansed data table as input for aggregation.
+* **Optimizing for Performance and Consistency**
+
+  * Ensuring that dependencies between tables are optimized for minimal data movement.
+  * Using partitioning and indexing to optimize table reads.
+
+#### **Table Hierarchies: Bronze, Silver, and Gold Layers**
+
+* **Creating Layered Pipelines**
+
+  * **Bronze Layer:** Raw data ingestion (e.g., logs, external APIs).
+  * **Silver Layer:** Cleansed data with transformations (e.g., filtering out invalid data).
+  * **Gold Layer:** Aggregated and ready-for-reporting data.
+
+* **Use Case Examples:**
+
+  * Raw clickstream logs -> Cleansed events -> Aggregated user behavior reports.
+
+---
+
+### **Module 4: Materialized vs Streaming Views**
+
+#### **Materialized Views**
+
+* **When to Materialize a View:**
+
+  * Improving query performance by storing the result set.
+  * Use when transformation results are frequently queried.
+
+* **Example:**
+
+  * Materializing a financial report summary for daily or monthly aggregations.
+
+#### **Streaming Views**
+
+* **Streaming Data and Views:**
+
+  * How DLT handles streaming data (real-time ingestion).
+  * Streaming views and how they stay up-to-date in near real-time.
+
+* **Use Case:**
+
+  * Real-time inventory monitoring or live web analytics.
+
+---
+
+### **Module 5: Data Ingestion with DLT**
+
+#### **dlt.read() vs dlt.read\_stream() Usage**
+
+* **dlt.read() for Batch Processing:**
+
+  * Loading data from static sources (e.g., CSV, Parquet, Delta).
+  * Example: Ingesting historical transaction data.
+
+* **dlt.read\_stream() for Real-Time Data:**
+
+  * Continuous ingestion from sources like Kafka, Delta tables, etc.
+  * Example: Streaming updates for a real-time analytics dashboard.
+
+* **Performance Optimization:**
+
+  * Configuring batch vs streaming ingestion to handle large-scale data efficiently.
+
+#### **Sourcing from Multiple Formats**
+
+* **Handling Delta, JSON, CSV, Parquet:**
+
+  * Loading different file formats using DLT and optimizing for performance.
+* **AutoLoader Integration:**
+
+  * Automating data ingestion from cloud storage into Delta tables (AWS S3, Azure Blob).
+  * Example: Ingesting a combination of Parquet and JSON files from cloud storage.
+
+---
+
+### **Module 6: Python vs SQL DLT Syntax**
+
+#### **Best Practices for Readability and Modularity**
+
+* **Structuring Pipelines for Maintainability:**
+
+  * Dividing complex transformations into reusable components or functions.
+  * Structuring code for clarity and reusability.
+
+* **When to Use SQL vs Python:**
+
+  * SQL: For simple aggregations, filters, and transformations.
+  * Python: For custom logic, invoking external libraries, and complex transformations.
+
+* **Performance Considerations:**
+
+  * Mixing Python and SQL in the same pipeline: how to balance between performance and flexibility.
+
+---
+
+### **Module 7: Data Quality with DLT Expectations**
+
+#### **dlt.expect(), dlt.expect\_or\_fail(), dlt.enforce()**
+
+* **dlt.expect():**
+
+  * Defining expectations for data quality (e.g., value ranges, null checks).
+  * Example: Expecting transaction amounts to be positive.
+
+* **dlt.expect\_or\_fail():**
+
+  * Enforcing strict rules that can halt a pipeline when violated.
+  * Example: Halting the pipeline if invalid data is encountered.
+
+* **dlt.enforce():**
+
+  * Ensuring data quality requirements are met across transformations.
+
+#### **Writing Reusable Quality Rules**
+
+* **Reusable Expectations:**
+
+  * Creating functions to define data quality rules across tables.
+  * Implementing quality rules that can be reused in multiple pipelines.
+
+* **Integrating with Data Observability Tools:**
+
+  * Tracking data quality over time using tools like Datadog or Splunk.
+
+#### **Logging Failures and Managing Bad Records**
+
+* **Logging Failed Records:**
+
+  * Strategies for capturing invalid records and handling failures gracefully.
+  * Setting up notifications for pipeline failures and providing actionable insights.
+
+---
+
+### **Module 8: Advanced DLT Concepts**
+
+#### **Incremental ETL in DLT**
+
+* **Optimizing for Incremental Processing:**
+
+  * How to design pipelines for incremental data updates.
+  * Use case: Processing new records since the last pipeline run.
+
+#### **DLT Performance Tuning**
+
+* **Optimizing Table Reads and Writes:**
+
+  * Techniques for improving pipeline performance with large datasets (e.g., partitioning, caching).
+  * Using the `OPTIMIZE` command to improve query performance.
+
+* **Monitoring and Debugging Pipelines:**
+
+  * Using Databricks monitoring tools to identify and resolve performance bottlenecks.
+
+---
+
+### **Final Project: Building a Scalable ETL Pipeline**
+
+* **Capstone Project:**
+
+  * Design and implement a fully operational DLT pipeline that ingests, transforms, and stores data across Bronze, Silver, and Gold layers, with a focus on scalability, data quality, and performance.
+  * Present a report with recommendations for optimization and monitoring strategies.
 
 ---
 
